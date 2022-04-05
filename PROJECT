@@ -1,0 +1,12 @@
+domain: giantswarm.io
+layout:
+- go.kubebuilder.io/v3
+projectName: aws-tccpf-watchdog
+repo: github.com/giantswarm/aws-tccpf-watchdog
+resources:
+- controller: true
+  domain: giantswarm.io
+  group: cluster.x-k8s.io
+  kind: Cluster
+  version: v1
+version: "3"
