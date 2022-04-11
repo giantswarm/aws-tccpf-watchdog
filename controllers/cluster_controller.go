@@ -89,7 +89,7 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 	service := cloudformationservice.NewService(log, *cloudFormation)
 
-	ok, err := service.CheckStackHasAllResources(stackName)
+	ok, err := service.CheckStackContainsAtLeastOneRouteDefinition(stackName)
 	if IsAWSNotFound(err) {
 		log.Info("CF stack not found")
 		return ctrl.Result{}, nil
@@ -98,11 +98,11 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	}
 
 	if ok {
-		log.Info("Cloud formation stack resources were all found")
+		log.Info("Cloud formation stack contains at least one route definition")
 		return ctrl.Result{}, nil
 	}
 
-	log.Info("Stack did not have all required resources, deleting it")
+	log.Info("Stack did not contain any route definition, deleting it")
 
 	err = service.DeleteStack(stackName)
 	if err != nil {

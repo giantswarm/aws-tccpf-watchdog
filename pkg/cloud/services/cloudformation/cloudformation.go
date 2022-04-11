@@ -1,8 +1,8 @@
 package cloudformation
 
 import (
-	"reflect"
-	"sort"
+	"fmt"
+	"strings"
 
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 	templateparser "github.com/awslabs/goformation/v6"
@@ -24,25 +24,8 @@ func NewService(logger logr.Logger, cloudFormationClient cloudformation.CloudFor
 	}
 }
 
-func (s *Service) CheckStackHasAllResources(stackName string) (bool, error) {
-	existingResources := []string{}
-	// Get a list of all resources in status `CREATE_COMPLETE` in the stack
-	{
-		output, err := s.cloudFormationClient.DescribeStackResources(&cloudformation.DescribeStackResourcesInput{
-			StackName: &stackName,
-		})
-		if err != nil {
-			return false, err
-		}
-
-		for _, resource := range output.StackResources {
-			if *resource.ResourceStatus == cloudformation.ResourceStatusCreateComplete || *resource.ResourceStatus == cloudformation.ResourceStatusUpdateComplete {
-				existingResources = append(existingResources, *resource.LogicalResourceId)
-			}
-		}
-	}
-
-	wantedResources := []string{}
+func (s *Service) CheckStackContainsAtLeastOneRouteDefinition(stackName string) (bool, error) {
+	resourcesTypeCount := map[string]int{}
 	{
 		output, err := s.cloudFormationClient.GetTemplate(&cloudformation.GetTemplateInput{
 			StackName: &stackName,
@@ -56,23 +39,52 @@ func (s *Service) CheckStackHasAllResources(stackName string) (bool, error) {
 			return false, err
 		}
 
-		for name, _ := range template.Resources {
-			wantedResources = append(wantedResources, name)
+		for _, resource := range template.Resources {
+			resourcesTypeCount[resource.AWSCloudFormationType()] += 1
 		}
 	}
 
-	sort.Strings(wantedResources)
-	sort.Strings(existingResources)
-
-	if !reflect.DeepEqual(wantedResources, existingResources) {
-		s.logger.Info("CF is not satisfied", "Wanted resources", wantedResources, "Existing resources", existingResources)
-
-		return false, nil
-	}
-
-	return true, nil
+	// Count how many `AWS::EC2::Route` are in the template.
+	return resourcesTypeCount["AWS::EC2::Route"] > 0, nil
 }
 
 func (s *Service) DeleteStack(stackName string) error {
+	if !strings.HasSuffix(stackName, "-tccpf") {
+		return fmt.Errorf("can't delete a cloudformation whose name does not end with '-tccpf'")
+	}
+	s.logger.Info("Deleting stack")
+
+	describe, err := s.cloudFormationClient.DescribeStacks(&cloudformation.DescribeStacksInput{
+		StackName: &stackName,
+	})
+	if err != nil {
+		return err
+	}
+	for _, stack := range describe.Stacks {
+		if *stack.StackStatus != cloudformation.StackStatusCreateComplete && *stack.StackStatus != cloudformation.StackStatusUpdateComplete {
+			return fmt.Errorf("can only delete stacks that are eiter in state %q or %q", cloudformation.StackStatusCreateComplete, cloudformation.StackStatusUpdateComplete)
+		}
+	}
+
+	f := false
+
+	// Ensure termination protection is disabled.
+	_, err = s.cloudFormationClient.UpdateTerminationProtection(&cloudformation.UpdateTerminationProtectionInput{
+		EnableTerminationProtection: &f,
+		StackName:                   &stackName,
+	})
+	if err != nil {
+		return err
+	}
+
+	_, err = s.cloudFormationClient.DeleteStack(&cloudformation.DeleteStackInput{
+		StackName: &stackName,
+	})
+	if err != nil {
+		return err
+	}
+
+	s.logger.Info("Deleted stack")
+
 	return nil
 }
