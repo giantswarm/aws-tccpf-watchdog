@@ -18,6 +18,7 @@ func IsLegacyCluster(logger logr.Logger, cluster capi.Cluster) bool {
 	version, err := semver.ParseTolerant(versionStr)
 	if err != nil {
 		logger.Info("Unable to parse release version %q.", versionStr)
+		return false
 	}
 
 	firstCapiVersion := semver.MustParse("20.0.0-alpha1")
