@@ -18,16 +18,11 @@ package controllers
 
 import (
 	"context"
-	"fmt"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/credentials/stscreds"
-	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 	"github.com/giantswarm/apiextensions/v6/pkg/apis/infrastructure/v1alpha3"
 	"github.com/giantswarm/microerror"
 	"github.com/go-logr/logr"
-	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -42,9 +37,10 @@ const arnKeyName = "aws.awsoperator.arn"
 
 // ClusterReconciler reconciles a Cluster object
 type ClusterReconciler struct {
-	Client client.Client
-	Log    logr.Logger
-	Scheme *runtime.Scheme
+	CFClient cloudformation.CloudFormation
+	Client   client.Client
+	Log      logr.Logger
+	Scheme   *runtime.Scheme
 }
 
 //+kubebuilder:rbac:groups=clusters.cluster.x-k8s.io,resources=clusters,verbs=get;list;watch;create;update;patch;delete
@@ -70,12 +66,7 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	stackName := key.CFStackName(*awsCluster)
 	log = log.WithValues("cfstack", stackName)
 
-	cfClient, err := r.getCFClient(ctx, *awsCluster)
-	if err != nil {
-		return reconcile.Result{}, microerror.Mask(err)
-	}
-
-	service := cloudformationservice.NewService(log, *cfClient)
+	service := cloudformationservice.NewService(log, r.CFClient)
 
 	ok, err := service.CheckStackContainsAtLeastOneRouteDefinition(stackName)
 	if IsAWSNotFound(err) {
@@ -106,34 +97,4 @@ func (r *ClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		// Uncomment the following line adding a pointer to an instance of the controlled resource as an argument
 		For(&v1alpha3.AWSCluster{}).
 		Complete(r)
-}
-
-func (r *ClusterReconciler) getCFClient(ctx context.Context, awsCluster v1alpha3.AWSCluster) (*cloudformation.CloudFormation, error) {
-	secret := &v1.Secret{}
-	err := r.Client.Get(ctx, client.ObjectKey{Name: awsCluster.Spec.Provider.CredentialSecret.Name, Namespace: awsCluster.Spec.Provider.CredentialSecret.Namespace}, secret)
-	if err != nil {
-		return nil, microerror.Mask(err)
-	}
-
-	arn, found := secret.Data[arnKeyName]
-	if !found {
-		return nil, microerror.Mask(fmt.Errorf("key %q was not found in secret %q/%q", arnKeyName, awsCluster.Spec.Provider.CredentialSecret.Namespace, awsCluster.Spec.Provider.CredentialSecret.Name))
-	}
-
-	ns, err := session.NewSession(&aws.Config{
-		Region: aws.String(awsCluster.Spec.Provider.Region),
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	creds := stscreds.NewCredentials(ns, string(arn))
-
-	cnf := &aws.Config{
-		Credentials: creds,
-	}
-
-	cfClient := cloudformation.New(ns, cnf)
-
-	return cfClient, nil
 }
