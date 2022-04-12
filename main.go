@@ -20,17 +20,13 @@ import (
 	"flag"
 	"os"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/credentials/stscreds"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/cloudformation"
+	infrastructurev1alpha3 "github.com/giantswarm/apiextensions/v6/pkg/apis/infrastructure/v1alpha3"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
-	capi "sigs.k8s.io/cluster-api/api/v1beta1"
 
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
@@ -48,23 +44,19 @@ var (
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
-	_ = capi.AddToScheme(scheme)
+	_ = infrastructurev1alpha3.AddToScheme(scheme)
 	// +kubebuilder:scaffold:scheme
 }
 
 func main() {
-	var arn string
 	var metricsAddr string
 	var enableLeaderElection bool
 	var probeAddr string
-	var region string
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
-	flag.StringVar(&arn, "arn", "", "Assumed role name for management cluster AWS Cloud Formation client.")
-	flag.StringVar(&region, "region", "", "Name of the AWS region.")
 
 	opts := zap.Options{
 		Development: true,
@@ -87,17 +79,10 @@ func main() {
 		os.Exit(1)
 	}
 
-	cloudFormation, err := getCFClient(region, arn)
-	if err != nil {
-		setupLog.Error(err, "unable to init CloudFormation client")
-		os.Exit(2)
-	}
-
 	if err = (&controllers.ClusterReconciler{
-		Client:   mgr.GetClient(),
-		CFClient: *cloudFormation,
-		Log:      ctrl.Log.WithName("controllers").WithName("Cluster"),
-		Scheme:   mgr.GetScheme(),
+		Client: mgr.GetClient(),
+		Log:    ctrl.Log.WithName("controllers").WithName("Cluster"),
+		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Cluster")
 		os.Exit(1)
@@ -118,21 +103,4 @@ func main() {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}
-}
-
-func getCFClient(region, arn string) (*cloudformation.CloudFormation, error) {
-	ns, err := session.NewSession(&aws.Config{
-		Region: aws.String(region),
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	cnf := &aws.Config{}
-	if arn != "" {
-		cnf.Credentials = stscreds.NewCredentials(ns, arn)
-	}
-	cfClient := cloudformation.New(ns, cnf)
-
-	return cfClient, nil
 }
