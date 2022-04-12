@@ -33,8 +33,6 @@ import (
 	"github.com/giantswarm/aws-tccpf-watchdog/pkg/key"
 )
 
-const arnKeyName = "aws.awsoperator.arn"
-
 // ClusterReconciler reconciles a Cluster object
 type ClusterReconciler struct {
 	CFClient cloudformation.CloudFormation
