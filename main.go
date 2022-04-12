@@ -20,10 +20,13 @@ import (
 	"flag"
 	"os"
 
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials/stscreds"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/cloudformation"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
@@ -84,12 +87,17 @@ func main() {
 		os.Exit(1)
 	}
 
+	cloudFormation, err := getCFClient(region, arn)
+	if err != nil {
+		setupLog.Error(err, "unable to init CloudFormation client")
+		os.Exit(2)
+	}
+
 	if err = (&controllers.ClusterReconciler{
-		ARN:    arn,
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("Cluster"),
-		Region: region,
-		Scheme: mgr.GetScheme(),
+		Client:   mgr.GetClient(),
+		CFClient: *cloudFormation,
+		Log:      ctrl.Log.WithName("controllers").WithName("Cluster"),
+		Scheme:   mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Cluster")
 		os.Exit(1)
@@ -110,4 +118,21 @@ func main() {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}
+}
+
+func getCFClient(region, arn string) (*cloudformation.CloudFormation, error) {
+	ns, err := session.NewSession(&aws.Config{
+		Region: aws.String(region),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	cnf := &aws.Config{}
+	if arn != "" {
+		cnf.Credentials = stscreds.NewCredentials(ns, arn)
+	}
+	cfClient := cloudformation.New(ns, cnf)
+
+	return cfClient, nil
 }

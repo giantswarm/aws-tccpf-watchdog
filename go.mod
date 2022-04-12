@@ -7,13 +7,13 @@ require (
 	github.com/awslabs/goformation/v6 v6.0.6
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/giantswarm/k8smetadata v0.10.1
-	github.com/go-errors/errors v1.4.2
+	github.com/giantswarm/microerror v0.4.0
 	github.com/go-logr/logr v1.2.2
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.19.0
 	k8s.io/apimachinery v0.23.0
 	k8s.io/client-go v0.23.0
-	sigs.k8s.io/cluster-api v1.1.3
+	sigs.k8s.io/cluster-api v1.0.5
 	sigs.k8s.io/controller-runtime v0.11.1
 )
 

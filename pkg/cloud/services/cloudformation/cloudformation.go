@@ -7,6 +7,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 	templateparser "github.com/awslabs/goformation/v6"
 	"github.com/awslabs/goformation/v6/intrinsics"
+	"github.com/giantswarm/microerror"
 	"github.com/go-logr/logr"
 )
 
@@ -31,12 +32,12 @@ func (s *Service) CheckStackContainsAtLeastOneRouteDefinition(stackName string) 
 			StackName: &stackName,
 		})
 		if err != nil {
-			return false, err
+			return false, microerror.Mask(err)
 		}
 
 		template, err := templateparser.ParseYAMLWithOptions([]byte(*output.TemplateBody), &intrinsics.ProcessorOptions{})
 		if err != nil {
-			return false, err
+			return false, microerror.Mask(err)
 		}
 
 		for _, resource := range template.Resources {
@@ -50,7 +51,7 @@ func (s *Service) CheckStackContainsAtLeastOneRouteDefinition(stackName string) 
 
 func (s *Service) DeleteStack(stackName string) error {
 	if !strings.HasSuffix(stackName, "-tccpf") {
-		return fmt.Errorf("can't delete a cloudformation whose name does not end with '-tccpf'")
+		return microerror.Mask(fmt.Errorf("can't delete a cloudformation whose name does not end with '-tccpf'"))
 	}
 	s.logger.Info("Deleting stack")
 
@@ -58,11 +59,11 @@ func (s *Service) DeleteStack(stackName string) error {
 		StackName: &stackName,
 	})
 	if err != nil {
-		return err
+		return microerror.Mask(err)
 	}
 	for _, stack := range describe.Stacks {
 		if *stack.StackStatus != cloudformation.StackStatusCreateComplete && *stack.StackStatus != cloudformation.StackStatusUpdateComplete {
-			return fmt.Errorf("can only delete stacks that are eiter in state %q or %q", cloudformation.StackStatusCreateComplete, cloudformation.StackStatusUpdateComplete)
+			return microerror.Mask(fmt.Errorf("can only delete stacks that are eiter in state %q or %q", cloudformation.StackStatusCreateComplete, cloudformation.StackStatusUpdateComplete))
 		}
 	}
 
@@ -81,7 +82,7 @@ func (s *Service) DeleteStack(stackName string) error {
 		StackName: &stackName,
 	})
 	if err != nil {
-		return err
+		return microerror.Mask(err)
 	}
 
 	s.logger.Info("Deleted stack")

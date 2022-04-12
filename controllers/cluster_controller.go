@@ -19,11 +19,8 @@ package controllers
 import (
 	"context"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/credentials/stscreds"
-	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
-	"github.com/go-errors/errors"
+	"github.com/giantswarm/microerror"
 	"github.com/go-logr/logr"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -40,11 +37,10 @@ import (
 
 // ClusterReconciler reconciles a Cluster object
 type ClusterReconciler struct {
-	ARN    string
-	Client client.Client
-	Log    logr.Logger
-	Region string
-	Scheme *runtime.Scheme
+	Client   client.Client
+	CFClient cloudformation.CloudFormation
+	Log      logr.Logger
+	Scheme   *runtime.Scheme
 }
 
 //+kubebuilder:rbac:groups=clusters.cluster.x-k8s.io,resources=clusters,verbs=get;list;watch;create;update;patch;delete
@@ -58,7 +54,7 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		if apierrors.IsNotFound(err) {
 			return reconcile.Result{}, nil
 		}
-		return reconcile.Result{}, err
+		return reconcile.Result{}, microerror.Mask(err)
 	}
 
 	// Return early if the object or Cluster is paused.
@@ -79,22 +75,17 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, nil
 	}
 
-	cloudFormation, err := r.getCFClient(r.Region, r.ARN)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-
 	stackName := key.CFStackName(*cluster)
 	log = log.WithValues("cfstack", stackName)
 
-	service := cloudformationservice.NewService(log, *cloudFormation)
+	service := cloudformationservice.NewService(log, r.CFClient)
 
 	ok, err := service.CheckStackContainsAtLeastOneRouteDefinition(stackName)
 	if IsAWSNotFound(err) {
 		log.Info("CF stack not found")
 		return ctrl.Result{}, nil
 	} else if err != nil {
-		return ctrl.Result{}, errors.Wrap(err, 1)
+		return ctrl.Result{}, microerror.Mask(err)
 	}
 
 	if ok {
@@ -106,7 +97,7 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 	err = service.DeleteStack(stackName)
 	if err != nil {
-		return ctrl.Result{}, err
+		return ctrl.Result{}, microerror.Mask(err)
 	}
 
 	return ctrl.Result{}, nil
@@ -118,21 +109,4 @@ func (r *ClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		// Uncomment the following line adding a pointer to an instance of the controlled resource as an argument
 		For(&capi.Cluster{}).
 		Complete(r)
-}
-
-func (r *ClusterReconciler) getCFClient(region, arn string) (*cloudformation.CloudFormation, error) {
-	ns, err := session.NewSession(&aws.Config{
-		Region: aws.String(region),
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	cnf := &aws.Config{}
-	if arn != "" {
-		cnf.Credentials = stscreds.NewCredentials(ns, arn)
-	}
-	cfClient := cloudformation.New(ns, cnf)
-
-	return cfClient, nil
 }

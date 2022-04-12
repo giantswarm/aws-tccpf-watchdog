@@ -23,9 +23,5 @@ func IsLegacyCluster(logger logr.Logger, cluster capi.Cluster) bool {
 
 	firstCapiVersion := semver.MustParse("20.0.0-alpha1")
 
-	if version.GE(firstCapiVersion) {
-		return false
-	}
-
-	return true
+	return version.LT(firstCapiVersion)
 }
