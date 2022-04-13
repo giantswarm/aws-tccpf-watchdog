@@ -1,0 +1,22 @@
+aws:
+  accessKeyID: accesskey
+  secretAccessKey: secretkey
+  region: region
+
+project:
+  branch: "[[ .Branch ]]"
+  commit: "[[ .SHA ]]"
+image:
+  name: "giantswarm/aws-tccpf-watchdog"
+  tag: "[[ .Version ]]"
+registry:
+  domain: docker.io
+
+pod:
+  user:
+    id: 1000
+  group:
+    id: 1000
+
+verticalPodAutoscaler:
+  enabled: true

@@ -1,0 +1,9 @@
+name: aws-tccpf-watchdog
+version: [[ .Version ]]
+description: "Operator to ensure the `tccpf` CF stack is correct for legacy AWS clusters."
+appVersion: "[[ .AppVersion ]]"
+home: "https://github.com/giantswarm/aws-tccpf-watchdog"
+apiVersion: v1
+annotations:
+  application.giantswarm.io/team: "phoenix"
+  config.giantswarm.io/version: 1.x.x
