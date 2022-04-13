@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"time"
 
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 	"github.com/giantswarm/apiextensions/v6/pkg/apis/infrastructure/v1alpha3"
@@ -86,7 +87,9 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, microerror.Mask(err)
 	}
 
-	return ctrl.Result{}, nil
+	return ctrl.Result{
+		RequeueAfter: 10 * time.Minute,
+	}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
