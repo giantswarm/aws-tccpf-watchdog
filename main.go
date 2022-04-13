@@ -24,6 +24,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 	infrastructurev1alpha3 "github.com/giantswarm/apiextensions/v6/pkg/apis/infrastructure/v1alpha3"
+	"github.com/giantswarm/microerror"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -87,7 +88,7 @@ func main() {
 
 	cfClient, err := getCFClient(region)
 	if err != nil {
-		setupLog.Error(err, "unable to start manager")
+		setupLog.Error(err, "unable to create cloud formation client")
 		os.Exit(1)
 	}
 
@@ -123,7 +124,7 @@ func getCFClient(region string) (*cloudformation.CloudFormation, error) {
 		Region: aws.String(region),
 	})
 	if err != nil {
-		return nil, err
+		return nil, microerror.Mask(err)
 	}
 
 	cfClient := cloudformation.New(ns)

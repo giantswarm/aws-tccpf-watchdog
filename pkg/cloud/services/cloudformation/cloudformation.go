@@ -63,7 +63,7 @@ func (s *Service) DeleteStack(stackName string) error {
 	}
 	for _, stack := range describe.Stacks {
 		if *stack.StackStatus != cloudformation.StackStatusCreateComplete && *stack.StackStatus != cloudformation.StackStatusUpdateComplete {
-			return microerror.Mask(fmt.Errorf("can only delete stacks that are eiter in state %q or %q", cloudformation.StackStatusCreateComplete, cloudformation.StackStatusUpdateComplete))
+			return microerror.Mask(fmt.Errorf("can only delete stacks that are either in state %q or %q", cloudformation.StackStatusCreateComplete, cloudformation.StackStatusUpdateComplete))
 		}
 	}
 
@@ -75,7 +75,7 @@ func (s *Service) DeleteStack(stackName string) error {
 		StackName:                   &stackName,
 	})
 	if err != nil {
-		return err
+		return microerror.Mask(err)
 	}
 
 	_, err = s.cloudFormationClient.DeleteStack(&cloudformation.DeleteStackInput{
