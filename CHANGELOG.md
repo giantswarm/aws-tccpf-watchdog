@@ -7,8 +7,11 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.1.0] - 2022-04-13
+
 ### Added
 
 - First release.
 
-[Unreleased]: https://github.com/giantswarm/aws-tccpf-watchdog/compare/v0.0.0...HEAD
+[Unreleased]: https://github.com/giantswarm/aws-tccpf-watchdog/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/giantswarm/aws-tccpf-watchdog/compare/v0.0.0...v0.1.0
