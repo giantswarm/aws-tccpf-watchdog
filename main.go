@@ -88,7 +88,7 @@ func main() {
 
 	cfClient, err := getCFClient(region)
 	if err != nil {
-		setupLog.Error(err, "unable to start manager")
+		setupLog.Error(err, "unable to create cloud formation client")
 		os.Exit(1)
 	}
 
