@@ -75,7 +75,7 @@ func (s *Service) DeleteStack(stackName string) error {
 		StackName:                   &stackName,
 	})
 	if err != nil {
-		return err
+		return microerror.Mask(err)
 	}
 
 	_, err = s.cloudFormationClient.DeleteStack(&cloudformation.DeleteStackInput{
