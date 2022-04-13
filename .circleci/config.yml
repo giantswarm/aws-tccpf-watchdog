@@ -42,6 +42,7 @@ workflows:
       # Ensure that for every commit to master, and for every new release tag,
       # an image gets pushed to the Aliyun registry.
       - architect/push-to-docker:
+          context: "architect"
           name: push-to-aliyun
           image: "registry-intl.cn-shanghai.aliyuncs.com/giantswarm/aws-tccpf-watchdog"
           username_envar: "ALIYUN_USERNAME"
