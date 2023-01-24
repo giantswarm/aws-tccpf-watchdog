@@ -7,6 +7,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+- add use of the runtime/default seccompprofile.
+
 ## [0.1.0] - 2022-04-13
 
 ### Added
