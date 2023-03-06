@@ -7,7 +7,13 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
 - add use of the runtime/default seccompprofile.
+
+### Changed
+
+- Allowed more volumes in the PSP so that the seccompprofile won't stop pods from running.
 
 ## [0.1.0] - 2022-04-13
 
