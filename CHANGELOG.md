@@ -9,11 +9,12 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
-- add use of the runtime/default seccompprofile.
+- Add use of the runtime/default seccompprofile.
 
 ### Changed
 
 - Allowed more volumes in the PSP so that the seccompprofile won't stop pods from running.
+- Update to Go 1.18.
 
 ## [0.1.0] - 2022-04-13
 
