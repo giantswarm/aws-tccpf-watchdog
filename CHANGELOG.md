@@ -7,6 +7,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- Add required values for pss policies.
+
 ### Added
 
 - Add use of the runtime/default seccompprofile.
