@@ -20,20 +20,10 @@ workflows:
           name: push-to-registries
           requires:
             - go-build
-            - hold-push-to-aliyun-pr
           filters:
             # Trigger the job also on git tag.
             tags:
               only: /^v.*/
-      - hold-push-to-aliyun-pr:
-          type: approval
-          requires:
-            - go-build
-          filters:
-            branches:
-              ignore: master
-            tags:
-              ignore: /^v.*/
       - architect/push-to-app-catalog:
           context: architect
           name: push-to-app-catalog
