@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	"github.com/aws/aws-sdk-go/service/cloudformation"
-	templateparser "github.com/awslabs/goformation/v6"
-	"github.com/awslabs/goformation/v6/intrinsics"
+	templateparser "github.com/awslabs/goformation/v7"
+	"github.com/awslabs/goformation/v7/intrinsics"
 	"github.com/giantswarm/microerror"
 	"github.com/go-logr/logr"
 )
