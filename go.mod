@@ -7,7 +7,7 @@ require (
 	github.com/awslabs/goformation/v6 v6.0.6
 	github.com/giantswarm/apiextensions/v6 v6.0.0
 	github.com/giantswarm/microerror v0.4.0
-	github.com/go-logr/logr v1.2.3
+	github.com/go-logr/logr v1.4.2
 	k8s.io/apimachinery v0.23.5
 	k8s.io/client-go v0.23.5
 	sigs.k8s.io/controller-runtime v0.11.2
