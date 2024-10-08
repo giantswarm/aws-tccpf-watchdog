@@ -79,5 +79,5 @@ require (
 replace (
 	github.com/pkg/sftp v1.10.1 => github.com/pkg/sftp v1.13.5
 	golang.org/x/text v0.3.7 => golang.org/x/text v0.3.8
-	sigs.k8s.io/cluster-api => sigs.k8s.io/cluster-api v1.0.5
+	sigs.k8s.io/cluster-api => sigs.k8s.io/cluster-api v1.8.4
 )
