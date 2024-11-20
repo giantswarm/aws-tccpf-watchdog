@@ -3,7 +3,7 @@ module github.com/giantswarm/aws-tccpf-watchdog
 go 1.18
 
 require (
-	github.com/aws/aws-sdk-go v1.43.32
+	github.com/aws/aws-sdk-go v1.55.5
 	github.com/awslabs/goformation/v6 v6.0.6
 	github.com/giantswarm/apiextensions/v6 v6.0.0
 	github.com/giantswarm/microerror v0.4.0
